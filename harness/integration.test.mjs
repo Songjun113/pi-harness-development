@@ -30,6 +30,13 @@ test('setup preserves personal configuration and backs up the deployed extension
   assert.equal(JSON.parse(readFileSync(join(data,'next-prompt.json'),'utf8')).model.model,'gpt-6-luna');
   execFileSync(process.execPath,[setup],{env,stdio:'pipe'});
   assert.equal(readdirSync(join(data,'backups')).filter(name => name.startsWith('pi-habits-')).length,1);
+  assert.match(readFileSync(join(data,'extensions/pi-web-search/index.ts'),'utf8'),/web_search/);
+  const profile=readFileSync(join(data,'agents/luna-web-researcher.md'),'utf8');
+  assert.match(profile,/model: openai\/gpt-6-luna/);
+  assert.match(profile,/web_search/);assert.match(profile,/web_read/);
+  assert.match(profile,/\.\.\/extensions\/pi-web-search\/index\.ts/);
+  assert.equal(readdirSync(join(data,'backups')).filter(name => name.startsWith('pi-web-search-')).length,1);
+  assert.equal(readdirSync(join(data,'backups')).filter(name => name.startsWith('luna-web-researcher-')).length,1);
   for (const name of ['company-project','research-code-review','research-failure-diagnosis']) {
     assert.match(readFileSync(join(data,'skills',name,'SKILL.md'),'utf8'),new RegExp(`name: ${name}`));
     const backups=readdirSync(join(data,'backups')).filter(file => file.startsWith(name+'-'));

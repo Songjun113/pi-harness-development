@@ -7,6 +7,8 @@ const web = join(root, 'addons/pi-web-luna');
 const run = (args, cwd = root) => execFileSync(process.execPath, args, { cwd, stdio: 'inherit' });
 run(['--test', 'harness/integration.test.mjs', 'harness/company-workflow.test.mjs']);
 run(['harness/extensions/pi-habits/test.mjs']);
+run(['--experimental-strip-types', '--test', 'harness/extensions/pi-web-search/test.mjs']);
+run(['harness/check-types.mjs']);
 run(['--experimental-strip-types', '--test', 'lib/next-prompt-core.test.mjs', 'lib/next-prompt-route.test.mjs', 'components/ChatInput.test.mjs'], web);
 run(['node_modules/typescript/bin/tsc', '--noEmit'], web);
 execNpmSync(['run', 'lint', '--prefix', web, '--workspaces=false'], { cwd: root, stdio: 'inherit' });

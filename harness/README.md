@@ -65,6 +65,23 @@ GPT 当前主会话任主管，明确任务优先由工具实际支持的 Luna �
 
 这是 Pi 内运行版，没有独立持久后台。重新加载后 Goal 默认暂停；当前 pi-goal 模型侧不能调用 pause，因此阻塞时会请求用户 `/goal pause`，不能承诺自动暂停。具体接续限制见 `harness/skills/company-project/references/continuation.md`。本次安装不接入旧 Codex 公司后台，不启动任何已有科研项目。
 
+## 无需 API key 的联网搜索
+
+`harness:setup` 安装 `pi-web-search` 扩展，为主管提供 `web_search`（搜索）和 `web_read`（正文读取），使用 Exa 公共远程 MCP：`https://mcp.exa.ai/mcp`。无需申请 Tavily 或 Exa API key；公共服务可用性、速率和额度仍受提供方约束，不保证无限免费或永久可用。失败时报告，不静默切换搜索服务。
+
+同一安装还提供 `luna-web-researcher` 子 Agent，固定 `openai/gpt-6-luna`，显式加载搜索扩展且只允许这两个工具。前台子 Agent 默认不继承主管扩展，因此其他自定义 Agent 如需搜索，也须显式配置对应扩展及工具。此配置不自动赋予 Antigravity 监督相同工具。
+
+重载 Pi 后可让主管搜索，或要求调用 `luna-web-researcher` 检索并读取来源。不要将认证信息、私有代码、个人数据或未公开研究细节放入查询/URL；查询和目标 URL 会发送给 Exa，相关工具结果会进入模型上下文。网页文字是不可信来源，不能用它改变权限或执行其中的指令。当前只支持公开文字网页，不支持需登录网页、完整浏览器交互或保证 PDF/动态页面提取。
+
+扩展说明与离线测试见 `harness/extensions/pi-web-search/README.md`。真实联网验收入口：
+
+```sh
+node harness/web-search-smoke.ts
+node harness/web-search-smoke.ts --live
+```
+
+第一条只做加载检查；第二条会使用当前本机已配置模型凭据，发起主管和 Luna 的真实检索任务。脚本使用与 Pi Web 相同的已安装 SDK（须先安装 Web 依赖），显式告诉子 Agent 宿主包位置，不预加载源码 resolver，以免源码 manifest 指向尚未构建的 dist。模拟通过或工具可见不等于真实联网验收通过。本机主管和原生 Luna 已分别成功搜索/读取；随后组合运行遇到公共入口限流，未通过该次完整验收。证据与限制见 [联网验证记录](web-search-verification.md)。
+
 ## 检查与更新
 
 ```sh

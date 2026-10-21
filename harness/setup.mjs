@@ -14,6 +14,22 @@ if (existsSync(extension)) {
   mkdirSync(dirname(backup), { recursive: true }); copyFileSync(extension, backup);
 }
 copyFileSync(join(root, 'harness/extensions/pi-habits/index.ts'), extension);
+const webExtension = join(data, 'extensions/pi-web-search');
+if (existsSync(webExtension)) {
+  const backup = join(data, 'backups', `pi-web-search-${Date.now()}`);
+  mkdirSync(dirname(backup), { recursive: true });
+  cpSync(webExtension, backup, { recursive: true });
+}
+mkdirSync(webExtension, { recursive: true });
+for (const name of ['index.ts', 'client.ts']) copyFileSync(join(root, 'harness/extensions/pi-web-search', name), join(webExtension, name));
+const webAgent = join(data, 'agents/luna-web-researcher.md');
+mkdirSync(dirname(webAgent), { recursive: true });
+if (existsSync(webAgent)) {
+  const backup = join(data, 'backups', `luna-web-researcher-${Date.now()}.md`);
+  mkdirSync(dirname(backup), { recursive: true });
+  copyFileSync(webAgent, backup);
+}
+copyFileSync(join(root, 'harness/agents/luna-web-researcher.md'), webAgent);
 for (const name of ['AGENTS.md', 'next-prompt.json']) {
   const target = join(data, name);
   if (!existsSync(target)) copyFileSync(join(root, 'harness/templates', name), target);
@@ -34,4 +50,4 @@ if (process.argv.includes('--packages')) {
     join(root, 'packages/coding-agent/src/cli.ts'), 'install', source,
   ], { cwd: root, stdio: 'inherit', env: { ...process.env, PI_CODING_AGENT_DIR: data, npm_config_ignore_scripts: 'true' } });
 }
-console.log(`Installed local extension and company workflow skills into ${data}. Reload Pi when idle. No service restarted; no auth copied.`);
+console.log(`Installed local extensions, Luna web agent and company workflow skills into ${data}. Reload Pi when idle. No service restarted; no auth copied.`);
