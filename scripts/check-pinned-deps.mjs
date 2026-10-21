@@ -4,11 +4,16 @@ import { join } from "node:path";
 const dependencySections = ["dependencies", "devDependencies", "optionalDependencies"];
 const exactVersionPattern = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const ignoredDirectories = new Set([".git", "dist", "node_modules"]);
+// Harness runtime installations are not source workspaces. Vendored standalone
+// addons retain upstream lockfiles and are checked by `npm run harness:check`.
+const harnessRoots = new Set(["agent-data", "agent-data-migration-backup", "cache", "logs", "addons"]);
 const packageJsonFiles = [];
 
 function collectPackageJsonFiles(directory) {
 	for (const entry of readdirSync(directory, { withFileTypes: true })) {
 		if (entry.isDirectory()) {
+			if (directory === "." && harnessRoots.has(entry.name)) continue;
+			if (directory === "apps" && entry.name === "pi-web") continue; // local npm launcher installation
 			if (!ignoredDirectories.has(entry.name)) {
 				collectPackageJsonFiles(join(directory, entry.name));
 			}

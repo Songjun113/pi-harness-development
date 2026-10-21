@@ -12,12 +12,16 @@ import {
 } from "typescript/unstable/ast/is";
 import { API } from "typescript/unstable/sync";
 
-const ignoredDirectories = new Set([".git", "coverage", "dist", "node_modules"]);
+const ignoredDirectories = new Set([".git", ".next", "coverage", "dist", "node_modules"]);
+// Standalone addons have their own TS compiler policy; runtime data is not source.
+const harnessRoots = new Set(["agent-data", "agent-data-migration-backup", "cache", "logs", "addons"]);
 const files = [];
 
 function collectTypescriptFiles(directory) {
 	for (const entry of readdirSync(directory, { withFileTypes: true })) {
 		if (entry.isDirectory()) {
+			if (directory === "." && harnessRoots.has(entry.name)) continue;
+			if (directory === "apps" && entry.name === "pi-web") continue;
 			if (!ignoredDirectories.has(entry.name)) {
 				collectTypescriptFiles(join(directory, entry.name));
 			}

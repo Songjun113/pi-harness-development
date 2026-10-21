@@ -14,6 +14,29 @@ packages/ai/src/providers/.model-generation-*/
 
 # Environment
 .env
+.env.*
+!.env.example
+
+# Harness runtime and machine-local data (never publish)
+/agent-data/
+/agent-data-migration-backup/
+/cache/
+/logs/
+/apps/pi-web/
+/tests/agy-smoke/
+/addons/next-prompt-review/
+/addons/pi-web-luna/NEXT-PROMPT-LOCAL.md
+/addons/pi-web-luna/next-prompt-smoke.log
+.next/
+playwright-report/
+test-results/
+*.pem
+*.key
+*.pfx
+*.p12
+/harness-local.json
+/bin/
+/model-catalog.json
 
 # Editor files
 .vscode/

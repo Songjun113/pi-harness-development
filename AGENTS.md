@@ -120,6 +120,14 @@ Attribution:
 
 For release preparation, publishing, verification, or recovery, load and follow [.pi/skills/release.md](.pi/skills/release.md).
 
+## This fork: Harness integration
+
+- Target remote: `https://github.com/Songjun113/pi-harness-development`; preserve upstream history and licenses.
+- Harness/Web work is documented in `harness/README.md`. Run `npm run harness:check` for the standalone Web and local extension in addition to applicable upstream checks.
+- Canonical habits source is `harness/extensions/pi-habits/`, not the ignored deployed copy in `agent-data/`. Use `npm run harness:setup` to deploy after testing, and reload only when safe.
+- The owner requested subsequent Harness updates be synchronized to this fork. After completing an authorized Harness change, review and stage only its explicit source paths, run the publication gate and checks, then commit/push without force. Stop and report failed checks, remote divergence, unrelated changes, or uncertain data disclosure. This does not authorize uploading research data or changes from other projects.
+- Never stage credentials, model/auth runtime configuration, session history, personal habits, logs, caches or machine-local installations. Do not use a background auto-upload watcher.
+
 ## User Override
 
 If the user's instructions conflict with any rule in this document, ask for explicit confirmation before overriding. Only then execute their instructions.

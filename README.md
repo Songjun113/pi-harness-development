@@ -1,3 +1,17 @@
+# Pi Harness Development
+
+This fork integrates Pi, a source-vendored Pi Web with Luna prompt suggestions,
+and a lightweight Luna-powered habits extension. Upstream Pi documentation follows below.
+
+- **[中文安装与使用说明](harness/README.md)** — setup, Web entry point, privacy, checks and GitHub sync.
+- Web source: [`addons/pi-web-luna`](addons/pi-web-luna) (upstream MIT license retained).
+- Local extension source: [`harness/extensions/pi-habits`](harness/extensions/pi-habits).
+- Pinned sources and optional packages: [`harness/manifest.json`](harness/manifest.json).
+
+Runtime data and credentials are intentionally not part of this repository.
+
+---
+
 <p align="center">
   <a href="https://pi.dev">
     <img alt="pi logo" src="https://pi.dev/logo-auto.svg" width="128">

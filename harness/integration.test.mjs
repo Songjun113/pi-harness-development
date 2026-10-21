@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const gate = fileURLToPath(new URL('./check-publication.mjs', import.meta.url));
+const setup = fileURLToPath(new URL('./setup.mjs', import.meta.url));
+test('publication gate rejects runtime and credentials without printing values', t => {
+  const cwd=mkdtempSync(join(tmpdir(),'harness-publication-'));
+  t.after(()=>rmSync(cwd,{recursive:true,force:true}));
+  execFileSync('git',['init'],{cwd,stdio:'ignore'});
+  mkdirSync(join(cwd,'harness'));writeFileSync(join(cwd,'harness/manifest.json'),JSON.stringify({repository:'https://github.com/Songjun113/pi-harness-development'}));
+  writeFileSync(join(cwd,'README.md'),'safe source');execFileSync('git',['add','README.md'],{cwd});
+  assert.equal(spawnSync(process.execPath,[gate],{cwd,encoding:'utf8'}).status,0);
+  mkdirSync(join(cwd,'agent-data'));writeFileSync(join(cwd,'agent-data/auth.json'),'{}');execFileSync('git',['add','agent-data/auth.json'],{cwd});
+  const result=spawnSync(process.execPath,[gate],{cwd,encoding:'utf8'});
+  assert.equal(result.status,1);assert.match(result.stderr,/private\/runtime path/);
+  const token='ghp_'+ 'z'.repeat(36);writeFileSync(join(cwd,'README.md'),token);execFileSync('git',['add','README.md'],{cwd});
+  const leaked=spawnSync(process.execPath,[gate],{cwd,encoding:'utf8'});
+  assert.equal(leaked.status,1);assert.match(leaked.stderr,/possible credential/);assert(!leaked.stderr.includes(token));
+});
+test('setup preserves personal configuration and backs up the deployed extension', t => {
+  const data=mkdtempSync(join(tmpdir(),'harness-setup-'));t.after(()=>rmSync(data,{recursive:true,force:true}));
+  writeFileSync(join(data,'AGENTS.md'),'private user rules');
+  const env={...process.env,PI_CODING_AGENT_DIR:data};
+  execFileSync(process.execPath,[setup],{env,stdio:'pipe'});
+  assert.equal(readFileSync(join(data,'AGENTS.md'),'utf8'),'private user rules');
+  assert.equal(JSON.parse(readFileSync(join(data,'next-prompt.json'),'utf8')).model.model,'gpt-6-luna');
+  execFileSync(process.execPath,[setup],{env,stdio:'pipe'});
+  assert.equal(readdirSync(join(data,'backups')).length,1);
+});

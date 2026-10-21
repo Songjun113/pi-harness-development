@@ -1,0 +1,14 @@
+import { execFileSync } from 'node:child_process';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execNpmSync } from '../scripts/npm-command.mjs';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const web = join(root, 'addons/pi-web-luna');
+const run = (args, cwd = root) => execFileSync(process.execPath, args, { cwd, stdio: 'inherit' });
+run(['--test', 'harness/integration.test.mjs']);
+run(['harness/extensions/pi-habits/test.mjs']);
+run(['--experimental-strip-types', '--test', 'lib/next-prompt-core.test.mjs', 'lib/next-prompt-route.test.mjs', 'components/ChatInput.test.mjs'], web);
+run(['node_modules/typescript/bin/tsc', '--noEmit'], web);
+execNpmSync(['run', 'lint', '--prefix', web, '--workspaces=false'], { cwd: root, stdio: 'inherit' });
+execFileSync('git', ['diff', '--check'], { cwd: root, stdio: 'inherit' });
+console.log('Harness checks passed (mock models; no paid calls).');

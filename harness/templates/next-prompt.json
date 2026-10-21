@@ -1,0 +1,12 @@
+{
+  "model": { "provider": "openai", "model": "gpt-6-luna" },
+  "thinking": "low",
+  "renderMode": "ghost",
+  "autoTrigger": true,
+  "acceptKey": "alt+/",
+  "maxRecentTurns": 6,
+  "maxTranscriptChars": 6000,
+  "maxSuggestionChars": 160,
+  "allowCrossProvider": true,
+  "allowCrossProviderPairs": [["openai", "openai"]]
+}

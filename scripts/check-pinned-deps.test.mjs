@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +52,19 @@ test("accepts exact internal and external versions, exact registry aliases, and 
 		optionalDependencies: { "@earendil-works/pi-tui": "1.2.0-rc.1" },
 	});
 	assert.equal(result.status, 0, result.stderr);
+});
+
+test("ignores standalone harness installs but still checks core packages", async (t) => {
+	const root = await mkdtemp(join(tmpdir(), "pi-harness-pins-"));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	for (const dir of ["agent-data/npm", "addons/pi-web-luna", "apps/pi-web"]) {
+		await mkdir(join(root, dir), { recursive: true });
+		await writeFile(join(root, dir, "package.json"), JSON.stringify({ dependencies: { vendor: "^1.0.0" } }));
+	}
+	assert.equal(spawnSync(process.execPath, [script], { cwd: root, encoding: "utf8" }).status, 0);
+	await mkdir(join(root, "packages/core"), { recursive: true });
+	await writeFile(join(root, "packages/core/package.json"), JSON.stringify({ dependencies: { core: "^1.0.0" } }));
+	assert.equal(spawnSync(process.execPath, [script], { cwd: root, encoding: "utf8" }).status, 1);
 });
 
 test("rejects registry alias ranges", async (t) => {
