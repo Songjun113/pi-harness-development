@@ -1,0 +1,6 @@
+interface:
+  display_name: "[JunMade] 科研失败诊断"
+  short_description: "从数据、实现、训练和评价证据定位科研失败，设计最小检查并决定下一步"
+  default_prompt: "使用 $research-failure-diagnosis 复核当前实验为何不佳，给出证据、最小区分检查和下一步。"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "[JunMade] 科研代码复核"
+  short_description: "独立核对科研方法与实际代码，检查数据训练评价逻辑并给出有证据的整改意见"
+  default_prompt: "使用 $research-code-review 独立复核当前科研实现，指出方法偏差、代码问题和实际验证范围。"
+policy:
+  allow_implicit_invocation: true

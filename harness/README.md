@@ -8,6 +8,7 @@
 - `addons/pi-web-luna/`：Pi Web v0.12.2 的完整源码快照（普通目录，不是子模块），包含灰字预测与 Tab 接受的本地适配。来源/提交见 manifest.json；其 LICENSE 保留。
 - `harness/extensions/pi-habits/`：可发布插件源码与模拟测试；部署副本在私有 agent-data 中。
 - `harness/templates/`：不含认证材料的默认配置模板，不是用户真实配置。
+- `harness/skills/`：Pi 版“公司，启动！”、科研代码复核与失败诊断技能。
 - `agent-data/`、`apps/pi-web/`、`bin/`、日志、缓存、备份：本地运行安装，不入 Git。
 
 这是一套源码集成，不是个人电脑快照。既有 npm 插件中的机器本地补丁不自动打包；第三方插件按 manifest 中的版本/提交重新安装。模型 ID 来自用户配置的 provider；普通 OpenAI 账号不保证存在 gpt-6-luna。
@@ -53,6 +54,16 @@ Luna 读取有限上下文，提出候选并筛选已批准规则；没有规则
 Web 使用固定 `openai/gpt-6-luna`，回复完成且空输入框时显示半透明灰字。Tab 或 Alt+/ 仅填入，不自动发送；Esc关闭。输入法和补全菜单优先。最近6条用户/助手纯文本、总计最多6000字符，无工具/思考内容；建议最多160字符。脱敏是辅助措施，不保证识别所有秘密。
 
 全局 next-prompt.json 的 `autoTrigger: false` 停止后续自动生成。Web实现不是上游终端编辑器复用，尚不支持原包所有选项。终端原包的接受键仍为 Alt+/（Tab与其补全冲突），模型缺失时上游可能警告并回退；Web严格不回退。
+
+## Pi 内多 Agent 科研协作
+
+`harness:setup` 同时安装 `company-project`、`research-code-review` 和 `research-failure-diagnosis`；已有同名技能先备份再更新。重载 Pi 后，可用 `/skill:company-project` 或“公司，启动！”接入当前项目。
+
+GPT 当前主会话任主管，明确任务优先由工具实际支持的 Luna 子 Agent 执行；独立监督固定 Gemini 3.8 Flash High（Antigravity `flash-high`）、只读审核，不可用时报告阻塞，不回退其他模型。Claude Opus 4.6 Thinking（`opus`）仅在用户明确指定时使用。按项目既有 Spec、阶段技能、执行证据和关键节点复核推进下一轮。习惯学习沿用现有插件。
+
+持续跨回复执行依赖 `pi-goal`。用户须明确说“公司，启动！并启动 Goal，按本项目已确认 Spec 持续推进……”；技能会先将目标展开为可核验合同，不因普通启动或安装行为自动创建 Goal。已有 Goal 不覆盖。`/goal status` 查看，`/goal pause` 暂停，`/goal resume` 恢复。未激活 Goal 时只推进当前轮。
+
+这是 Pi 内运行版，没有独立持久后台。重新加载后 Goal 默认暂停；当前 pi-goal 模型侧不能调用 pause，因此阻塞时会请求用户 `/goal pause`，不能承诺自动暂停。具体接续限制见 `harness/skills/company-project/references/continuation.md`。本次安装不接入旧 Codex 公司后台，不启动任何已有科研项目。
 
 ## 检查与更新
 

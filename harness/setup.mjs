@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execNpmSync } from '../scripts/npm-command.mjs';
@@ -19,10 +19,19 @@ for (const name of ['AGENTS.md', 'next-prompt.json']) {
   if (!existsSync(target)) copyFileSync(join(root, 'harness/templates', name), target);
   else console.log(`Preserved existing ${target}`);
 }
+for (const name of ['company-project', 'research-code-review', 'research-failure-diagnosis']) {
+  const target = join(data, 'skills', name);
+  if (existsSync(target)) {
+    const backup = join(data, 'backups', `${name}-${Date.now()}`);
+    mkdirSync(dirname(backup), { recursive: true });
+    cpSync(target, backup, { recursive: true });
+  }
+  cpSync(join(root, 'harness/skills', name), target, { recursive: true });
+}
 if (process.argv.includes('--packages')) {
   for (const source of manifest.packages) execFileSync(process.execPath, [
     '--import', pathToFileURL(join(root, 'packages/coding-agent/src/experimental/source-resolver.ts')).href,
     join(root, 'packages/coding-agent/src/cli.ts'), 'install', source,
   ], { cwd: root, stdio: 'inherit', env: { ...process.env, PI_CODING_AGENT_DIR: data, npm_config_ignore_scripts: 'true' } });
 }
-console.log(`Installed local extension into ${data}. Reload Pi when idle. No service restarted; no auth copied.`);
+console.log(`Installed local extension and company workflow skills into ${data}. Reload Pi when idle. No service restarted; no auth copied.`);

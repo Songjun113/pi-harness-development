@@ -29,5 +29,11 @@ test('setup preserves personal configuration and backs up the deployed extension
   assert.equal(readFileSync(join(data,'AGENTS.md'),'utf8'),'private user rules');
   assert.equal(JSON.parse(readFileSync(join(data,'next-prompt.json'),'utf8')).model.model,'gpt-6-luna');
   execFileSync(process.execPath,[setup],{env,stdio:'pipe'});
-  assert.equal(readdirSync(join(data,'backups')).length,1);
+  assert.equal(readdirSync(join(data,'backups')).filter(name => name.startsWith('pi-habits-')).length,1);
+  for (const name of ['company-project','research-code-review','research-failure-diagnosis']) {
+    assert.match(readFileSync(join(data,'skills',name,'SKILL.md'),'utf8'),new RegExp(`name: ${name}`));
+    const backups=readdirSync(join(data,'backups')).filter(file => file.startsWith(name+'-'));
+    assert.equal(backups.length,1);
+    assert.equal(readFileSync(join(data,'backups',backups[0],'SKILL.md'),'utf8'),readFileSync(join(data,'skills',name,'SKILL.md'),'utf8'));
+  }
 });

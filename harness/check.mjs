@@ -5,7 +5,7 @@ import { execNpmSync } from '../scripts/npm-command.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const web = join(root, 'addons/pi-web-luna');
 const run = (args, cwd = root) => execFileSync(process.execPath, args, { cwd, stdio: 'inherit' });
-run(['--test', 'harness/integration.test.mjs']);
+run(['--test', 'harness/integration.test.mjs', 'harness/company-workflow.test.mjs']);
 run(['harness/extensions/pi-habits/test.mjs']);
 run(['--experimental-strip-types', '--test', 'lib/next-prompt-core.test.mjs', 'lib/next-prompt-route.test.mjs', 'components/ChatInput.test.mjs'], web);
 run(['node_modules/typescript/bin/tsc', '--noEmit'], web);
