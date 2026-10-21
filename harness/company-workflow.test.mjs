@@ -25,6 +25,18 @@ test('role and continuation contracts preserve the confirmed safety boundaries',
   assert.match(continuation,/不得宣称“已自动停止”/);
   assert.match(skill,/禁止调用旧/);
 });
+test('entrypoint explicitly routes the Spec research loop and its continuation branches',()=>{
+  const skill=read('SKILL.md');
+  for(const name of ['brainstorming-research-ideas','grilling','idea-evaluator','academic-paper-reader','deep-research','nature-academic-search','spec-start','nature-data','pytorch-lightning','research-code-review','mlflow','research-failure-diagnosis','next-experiment','creative-thinking-for-research','academic-plotting','ml-paper-writing']) assert(skill.includes('`'+name+'`'),name);
+  assert.match(skill,/问题与证据 → Spec 计划 → 数据与实现 → 独立代码复核 → 最小实验 → 结果验收/);
+  assert.match(skill,/本轮通过但 Spec 尚有未完成目标/);
+  assert.match(skill,/实验未通过或结果不佳/);
+  assert.match(skill,/子 Agent 或外部作业仍在运行/);
+  assert.match(skill,/权限、真实人审或必要监督阻塞/);
+  assert.match(skill,/Spec 总目标完成或达到用户指定停止点/);
+  assert.match(skill,/活动 Goal 内直接接续/);
+  assert.match(skill,/尚未安装的技能说明缺口/);
+});
 test('local research review and diagnosis skills are included',()=>{
   for(const name of ['research-code-review','research-failure-diagnosis']){
     const path=resolve(base,'..',name,'SKILL.md');assert(existsSync(path));
