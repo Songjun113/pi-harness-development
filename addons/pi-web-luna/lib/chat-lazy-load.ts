@@ -1,4 +1,9 @@
 export const VISIBLE_PAGE_SIZE = 50;
+export const MOBILE_VISIBLE_PAGE_SIZE = 12;
+
+export function getInitialVisibleCount(isMobile: boolean): number {
+  return isMobile ? MOBILE_VISIBLE_PAGE_SIZE : VISIBLE_PAGE_SIZE;
+}
 export const CHAT_SCROLL_TAIL_TOLERANCE = 8;
 export const CHAT_SCROLL_REATTACH_TOLERANCE = 96;
 

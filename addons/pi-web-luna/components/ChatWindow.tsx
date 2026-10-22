@@ -43,6 +43,7 @@ import {
   isScrollAtTail,
   restoreScrollTop,
   VISIBLE_PAGE_SIZE,
+  getInitialVisibleCount,
 } from "@/lib/chat-lazy-load";
 
 interface Props {
@@ -484,7 +485,14 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
   // --- Lazy-load historical messages ---
   // Only render the last N messages initially. When the user scrolls to the
   // top, load another page while keeping the scroll position stable.
-  const [visibleCount, setVisibleCount] = useState(VISIBLE_PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = useState(() => getInitialVisibleCount(true));
+  const renderedCountRef = useRef(0);
+  const mobileWindowInitialized = useRef(false);
+  useEffect(() => {
+    if (!isMobile || mobileWindowInitialized.current) return;
+    mobileWindowInitialized.current = true;
+    if (!searchTarget && !pendingScrollRestore) setVisibleCount(getInitialVisibleCount(true));
+  }, [isMobile, searchTarget, pendingScrollRestore]);
   // State, not a ref: the sentinel can appear with nothing else changing (a
   // finished turn regrouped into more rows), and must get an observer then.
   const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
@@ -674,13 +682,14 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
         if (!entries[0]?.isIntersecting) return;
         // Skip while a page is already loading.
         if (loadingOlderRef.current) return;
-        if (!hasEarlierMessages) {
+        if (renderedCountRef.current > visibleCount || !hasEarlierMessages) {
+          // Reveal already loaded rows before fetching another history page.
           // Everything is loaded, yet the sentinel shows: the messages render as
           // more rows than the window holds (an answer and its thinking are
           // two), so widen the window. The observer is renewed with it, in case
           // the sentinel stays in view.
           prevScrollDistanceRef.current = captureScrollDistance(container.scrollHeight, container.scrollTop);
-          setVisibleCount((current) => getNextVisibleCount(current));
+          setVisibleCount((current) => getNextVisibleCount(current, getInitialVisibleCount(isMobile)));
           return;
         }
         // Fetch the previous page from the server and prepend it (loadContext
@@ -692,7 +701,9 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
         if (!sid) return;
         loadingOlderRef.current = true;
         prevScrollDistanceRef.current = captureScrollDistance(container.scrollHeight, container.scrollTop);
-        void loadOlderPage(sid, oldestId).finally(() => {
+        void loadOlderPage(sid, oldestId).then(context => {
+          if (context && isMobile) setVisibleCount(current => current + Math.max(getInitialVisibleCount(true), context.messages.length * 2));
+        }).finally(() => {
           loadingOlderRef.current = false;
         });
       },
@@ -700,13 +711,15 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [sentinel, visibleCount, historyCursor, hasEarlierMessages, session, loadOlderPage, sessionIdRef, scrollContainerRef]);
+  }, [sentinel, visibleCount, historyCursor, hasEarlierMessages, session, loadOlderPage, sessionIdRef, scrollContainerRef, isMobile]);
 
   // Keep the rendered window at least as large as what's loaded, so prepended
   // (older) pages stay visible instead of being sliced off the top.
   useEffect(() => {
-    setVisibleCount((current) => Math.max(current, messages.length));
-  }, [messages.length]);
+    // Desktop keeps its historical behavior. Mobile must not immediately
+    // undo its bounded initial window when the first history page arrives.
+    if (!isMobile) setVisibleCount((current) => Math.max(current, VISIBLE_PAGE_SIZE, messages.length));
+  }, [messages.length, isMobile]);
 
   // After visibleCount increases (more messages prepended), restore the
   // scroll position so the viewport doesn't jump.
@@ -1314,6 +1327,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                 }
                 idx = endIdx;
               }
+              renderedCountRef.current = rendered.length;
               const { startIndex } = getVisibleRenderWindow(rendered.length, visibleCount);
               const hasMore = startIndex > 0 || hasEarlierMessages;
               return (

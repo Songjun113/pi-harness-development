@@ -58,6 +58,8 @@ const nextConfig: NextConfig = {
   // from other machines on the same LAN.
   allowedDevOrigins: [
     "127.0.0.1",
+    // Operator-selected private proxy host (for example, a Tailscale Serve DNS name).
+    ...(process.env.PI_WEB_ALLOWED_HOSTS?.split(",").map(host => host.trim()).filter(Boolean) ?? []),
     "10.*.*.*",
     // 172.16.0.0/12
     "172.16.*.*",

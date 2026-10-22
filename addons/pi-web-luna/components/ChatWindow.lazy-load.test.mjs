@@ -4,7 +4,7 @@ import test from "node:test";
 import { Script, createContext } from "node:vm";
 import ts from "typescript";
 
-const { captureScrollDistance, getNextVisibleCount } = await import("../lib/chat-lazy-load.ts");
+const { captureScrollDistance, getNextVisibleCount, getInitialVisibleCount } = await import("../lib/chat-lazy-load.ts");
 
 const source = ts.createSourceFile("ChatWindow.tsx", await readFile(new URL("./ChatWindow.tsx", import.meta.url), "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const nodes = [];
@@ -30,7 +30,8 @@ function mount({ hasEarlierMessages, landed = true }) {
     sentinel: {}, scrollContainerRef: { current: { scrollHeight: 4000, scrollTop: 0 } },
     loadingOlderRef: { current: false }, prevScrollDistanceRef: { current: null }, requestedCursorRef: { current: null },
     hasEarlierMessages, historyCursor: "older", session: { id: "a" }, sessionIdRef: { current: "a" }, activeLeafId: "leaf",
-    captureScrollDistance, getNextVisibleCount,
+    captureScrollDistance, getNextVisibleCount, getInitialVisibleCount,
+    isMobile: false, visibleCount: 50, renderedCountRef: { current: 50 },
     setVisibleCount: (update) => { calls.visibleCount = update(calls.visibleCount); },
     loadContext: (...args) => { calls.loads.push(args); return Promise.resolve(landed ? { oldestEntryId: "oldest" } : undefined); },
     IntersectionObserver: class { constructor(callback) { observed = callback; } observe() {} disconnect() {} },
@@ -52,6 +53,17 @@ function mount({ hasEarlierMessages, landed = true }) {
     },
   };
 }
+
+test("phone reveals locally hidden rows before requesting older server history", async () => {
+  const chat = mount({ hasEarlierMessages: true });
+  chat.context.isMobile = true;
+  chat.context.visibleCount = 12;
+  chat.calls.visibleCount = 12;
+  chat.context.renderedCountRef.current = 60;
+  await chat.reachTop();
+  assert.equal(chat.calls.visibleCount, 24);
+  assert.deepEqual(chat.calls.loads, []);
+});
 
 async function reachTop(state) {
   const { calls, context, reachTop: report } = mount(state);
