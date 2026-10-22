@@ -7,9 +7,9 @@ import { createJiti } from 'jiti';
 const core=await createJiti(import.meta.url).import('./next-prompt-core.ts');
 const code=ts.transpileModule(readFileSync(new URL('../app/api/sessions/[id]/next-prompt/route.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
 function fixture(){
- let calls=0,leaf='leaf-a',busy=false,modelAvailable=true;let resolve;
+ let calls=0,leaf='leaf-a',busy=false,modelAvailable=true,api='openai-responses',options;let resolve;
  const response=new Promise(r=>resolve=r);
- const inner={isIdle:true,pendingMessageCount:0,messages:[{role:'assistant',stopReason:'stop',content:[{type:'text',text:'done'}]}],sessionManager:{getLeafId:()=>leaf},subscribe:()=>()=>{},modelRuntime:{getModel:(p,id)=>{assert.equal(p+'/'+id,'openai/gpt-6-luna');return modelAvailable?{}:undefined},streamSimple:()=>{calls++;return{result:()=>response}}}};
+ const inner={isIdle:true,pendingMessageCount:0,messages:[{role:'assistant',stopReason:'stop',content:[{type:'text',text:'done'}]}],sessionManager:{getLeafId:()=>leaf},subscribe:()=>()=>{},modelRuntime:{getModel:(p,id)=>{assert.equal(p+'/'+id,'openai/gpt-6-luna');return modelAvailable?{api}:undefined},streamSimple:(_model,_context,opts)=>{options=opts;calls++;return{result:()=>response}}}};
  const wrapper={inner,isAlive:()=>true,isRunning:()=>busy};
  const loaded={exports:{}};
  const modules={
@@ -22,7 +22,7 @@ function fixture(){
  '@/lib/next-prompt-core':core,
  };
  new Script(code).runInNewContext({exports:loaded.exports,require:n=>{if(!(n in modules))throw Error(n);return modules[n]},setTimeout,clearTimeout,AbortController,Date,Map});
- return{post:(req={})=>loaded.exports.POST(req,{params:Promise.resolve({id:'session-a'})}),finish:()=>resolve({stopReason:'stop',content:[{type:'text',text:'检查结果'}]}),calls:()=>calls,setLeaf:v=>leaf=v,setBusy:v=>busy=v,noModel:()=>modelAvailable=false};
+ return{post:(req={})=>loaded.exports.POST(req,{params:Promise.resolve({id:'session-a'})}),finish:()=>resolve({stopReason:'stop',content:[{type:'text',text:'检查结果'}]}),calls:()=>calls,setLeaf:v=>leaf=v,setBusy:v=>busy=v,noModel:()=>modelAvailable=false,setApi:value=>api=value,options:()=>options};
 }
 test('route rejects forbidden/busy and missing model without fallback',async()=>{
  const f=fixture();assert.equal((await f.post({forbidden:true})).status,403);
@@ -33,6 +33,20 @@ test('route coalesces concurrent requests and caches only UI output',async()=>{
  const f=fixture();const a=f.post(),b=f.post();await new Promise(r=>setImmediate(r));assert.equal(f.calls(),1);f.finish();
  assert.equal((await a).body.suggestion,'检查结果');assert.equal((await b).body.suggestion,'检查结果');
  await f.post();assert.equal(f.calls(),1);
+});
+test('prediction uses Luna Low with Responses Priority, without changing main-session settings',async()=>{
+ const f=fixture();const task=f.post();await new Promise(r=>setImmediate(r));
+ assert.equal(f.options().reasoning,'low');
+ const original={model:'gpt-6-luna',input:[],service_tier:'auto'};
+ const payload=f.options().onPayload(original);
+ assert.equal(payload.service_tier,'priority');assert.equal(original.service_tier,'auto');
+ assert.equal(payload.model,'gpt-6-luna');
+ assert.throws(()=>f.options().onPayload(null),/Invalid prediction payload/);
+ f.finish();assert.equal((await task).body.status,'ready');
+});
+test('prediction does not silently lose Fast on an unsupported model API',async()=>{
+ const f=fixture();f.setApi('openai-completions');
+ assert.equal((await f.post()).body.status,'fast-unsupported');assert.equal(f.calls(),0);
 });
 test('route refuses a result when branch leaf changes during prediction',async()=>{
  const f=fixture();const task=f.post();await new Promise(r=>setImmediate(r));f.setLeaf('leaf-b');f.finish();

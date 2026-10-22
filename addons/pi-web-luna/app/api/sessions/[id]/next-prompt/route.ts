@@ -11,8 +11,8 @@ const modelName = `${SUGGESTION_MODEL.provider}/${SUGGESTION_MODEL.id}`;
 const empty = (status: string): Result => ({ suggestion: "", model: modelName, status });
 // Shared between tabs/HMR: no duplicate model call for one session branch revision.
 type Cached = { task: Promise<Result>; expires: number };
-const globalCache = globalThis as typeof globalThis & { __lunaNextPromptV2?: Map<string, Cached> };
-const cache = globalCache.__lunaNextPromptV2 ??= new Map<string, Cached>();
+const globalCache = globalThis as typeof globalThis & { __lunaNextPromptV3?: Map<string, Cached> };
+const cache = globalCache.__lunaNextPromptV3 ??= new Map<string, Cached>();
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!isApiRequestAllowed(req)) return NextResponse.json(empty("forbidden"), { status: 403 });
@@ -41,6 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       try {
         const model = session.modelRuntime.getModel(SUGGESTION_MODEL.provider, SUGGESTION_MODEL.id);
         if (!model) return empty("model-unavailable");
+        if (model.api !== "openai-responses") return empty("fast-unsupported");
         const transcript = suggestionTranscript(messages);
         if (!transcript) return empty("empty");
         const controller = new AbortController();
@@ -53,7 +54,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
           const result = await session.modelRuntime.streamSimple(model, {
             systemPrompt: SUGGESTION_SYSTEM,
             messages: [{ role: "user", content: transcript, timestamp: Date.now() }],
-          }, { reasoning: "low", maxTokens: 400, signal: controller.signal }).result();
+          }, {
+            reasoning: "low", maxTokens: 400, signal: controller.signal,
+            // SimpleStreamOptions does not forward provider-specific serviceTier.
+            // Set the documented Responses Fast/Priority field on this request only.
+            onPayload: payload => {
+              if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error("Invalid prediction payload");
+              return { ...payload, service_tier: "priority" };
+            },
+          }).result();
           if (controller.signal.aborted || result.stopReason === "error" || result.stopReason === "aborted") return empty("request-failed");
           if (!wrapper.isAlive() || !session.isIdle || session.sessionManager.getLeafId() !== leaf) return empty("stale");
           return { suggestion: cleanSuggestion(result.content.filter(b => b.type === "text").map(b => b.text).join("")), model: modelName, status: "ready" };
