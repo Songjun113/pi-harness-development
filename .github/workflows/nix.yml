@@ -14,27 +14,8 @@ name: Nix
 # `nix run github:earendil-works/pi/stable` runs the latest release.
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/nix.yml'
-      - 'flake.lock'
-      - 'flake.nix'
-      - 'nix/**'
-      - 'package-lock.json'
-      - 'packages/*/package.json'
-      - 'packages/coding-agent/install-lock/**'
-      - 'packages/ai/scripts/hydrate-model-catalog.ts'
-      - 'scripts/update-model-catalog-pin.mjs'
-  workflow_run:
-    workflows:
-      - Publish Model Catalog
-    types:
-      - completed
   workflow_dispatch:
+
 
 permissions: {}
 
