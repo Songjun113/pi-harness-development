@@ -1,8 +1,8 @@
 name: Issue Triage Labels
 
 on:
-  issues:
-    types: [reopened, labeled]
+  workflow_dispatch:
+
 
 jobs:
   update-labels:
