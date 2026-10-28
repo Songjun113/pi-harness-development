@@ -48,10 +48,7 @@
 name: Issue Analysis
 
 on:
-  issues:
-    types: [labeled]
-  issue_comment:
-    types: [created]
+  workflow_dispatch:
 
 permissions:
   contents: read
