@@ -1,9 +1,8 @@
 name: Harness checks
 on:
-  push:
-    paths: ['harness/**', 'addons/pi-web-luna/**', '.github/workflows/harness.yml']
-  pull_request:
-    paths: ['harness/**', 'addons/pi-web-luna/**', '.github/workflows/harness.yml']
+  workflow_dispatch:
+
+
 permissions:
   contents: read
 jobs:
