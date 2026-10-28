@@ -34,9 +34,6 @@ on:
       - Publish Model Catalog
     types:
       - completed
-  # Catches packaging drift from changes pushed to main without a pull request.
-  schedule:
-    - cron: '43 5 * * *'
   workflow_dispatch:
 
 permissions: {}
