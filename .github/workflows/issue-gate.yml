@@ -1,8 +1,8 @@
 name: Issue Gate
 
 on:
-  issues:
-    types: [opened]
+  workflow_dispatch:
+
 
 jobs:
   check-contributor:
