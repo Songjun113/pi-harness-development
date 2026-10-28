@@ -1,9 +1,6 @@
 name: Build Binaries
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -14,6 +11,7 @@ on:
         description: 'Source ref to build/publish (defaults to tag; use only for release recovery)'
         required: false
         type: string
+
 
 permissions: {}
 
